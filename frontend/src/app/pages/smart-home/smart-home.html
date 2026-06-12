@@ -1,0 +1,86 @@
+<div class="min-h-screen bg-[#0d0d0d] text-white flex flex-col items-center px-6 py-12">
+
+  <!-- Header -->
+  <h1 class="text-2xl font-semibold mb-2">Smart Home</h1>
+  <p class="text-white/40 text-sm mb-10">Function calling demo · {{ lampNumbers.length }} lamps</p>
+
+  <!-- Lamp grid -->
+  <div class="grid grid-cols-3 gap-4 mb-12">
+    @for (n of lampNumbers; track n) {
+      <div class="relative w-24 h-24 bg-[#1a1a1a] rounded-xl flex items-center justify-center border transition-all duration-500"
+           [class]="lamps()[n-1] === 1
+             ? 'border-yellow-400 shadow-[0_0_20px_4px_rgba(250,204,21,0.4)]'
+             : 'border-white/10'">
+
+        <!-- Lamp icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             [attr.stroke]="lamps()[n-1] === 1 ? '#facc15' : '#444'"
+             [style.filter]="lamps()[n-1] === 1 ? 'drop-shadow(0 0 6px #facc15)' : 'none'">
+          <path d="M9 21h6M12 3a6 6 0 0 1 4 10.47V17H8v-3.53A6 6 0 0 1 12 3z"/>
+        </svg>
+
+        <!-- Number badge -->
+        <span class="absolute top-1.5 right-2 text-xs font-mono"
+              [class]="lamps()[n-1] === 1 ? 'text-yellow-400' : 'text-white/30'">
+          {{ n }}
+        </span>
+      </div>
+    }
+  </div>
+
+  <!-- Input -->
+  <!-- replace the existing input div with this -->
+  <div class="w-full max-w-xl">
+    <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl px-4 py-3 focus-within:border-white/25 transition-colors">
+      <!-- Model selector row -->
+      <div class="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+        <span class="text-white/30 text-xs">Model</span>
+        <select
+          class="bg-transparent text-white/60 text-xs outline-none cursor-pointer"
+          [ngModel]="selectedModel()"
+          (ngModelChange)="selectedModel.set($event)">
+          @for (m of models(); track m) {
+            <option [value]="m" class="bg-[#1a1a1a]">{{ m }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex items-end gap-2">
+      <textarea
+        class="flex-1 bg-transparent resize-none outline-none text-sm text-white placeholder-white/30 max-h-28"
+        rows="1"
+        placeholder='e.g. "turn on all lamps" or "turn off even ones"'
+        [ngModel]="input()"
+        (ngModelChange)="input.set($event)"
+        (keydown)="onKeydown($event)"
+      ></textarea>
+        <button
+          class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+          [class]="input().trim() && !loading()
+          ? 'bg-white text-black hover:bg-white/90 cursor-pointer'
+          : 'bg-white/10 text-white/20 cursor-not-allowed'"
+          [disabled]="!input().trim() || loading()"
+          (click)="send()">
+          @if (loading()) {
+            <span class="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin"></span>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+
+    @if (error()) {
+      <p class="text-red-400 text-xs mt-2 text-center">{{ error() }}</p>
+    }
+  </div>
+
+
+  <!-- Nav back -->
+  <a href="/frontend/public" class="mt-10 text-white/30 text-xs hover:text-white/60 transition-colors">← Back to chat</a>
+
+</div>
