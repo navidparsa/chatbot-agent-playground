@@ -3,17 +3,14 @@ import {RouterLink, RouterLinkActive} from '@angular/router';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [
-    RouterLink,
-    RouterLinkActive
-  ],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
   navItems = [
-    { icon: '💬', label: 'Chat',  route: '/'      },
-    { icon: '💡', label: 'Lamps', route: '/lamps' },
+    { icon: '💬', label: 'Chat', route: '/' },
+    { icon: '💡', label: 'Smart-Home', route: '/smart-home' },
   ];
 }
 
