@@ -6,7 +6,7 @@ import {Message} from './message';
 @Injectable({
   providedIn: 'root',
 })
-export class ChatService {
+export class LanguageModelService {
   private api = 'http://localhost:8000';
 
   constructor(private http: HttpClient) {}
@@ -15,7 +15,6 @@ export class ChatService {
     return this.http.get<{models: string[]}>('http://localhost:8000/models')
       .pipe(map(r => r.models));
   }
-
 
   chat(messages: Message[], model: string): Observable<string> {
     return new Observable(observer => {
@@ -47,5 +46,12 @@ export class ChatService {
         read();
       }).catch(err => observer.error(err));
     });
+  }
+
+  changeLampState(message : string, model :string){
+    return this.http.post<{ states: number[]; error?: string }>(
+      'http://localhost:8000/smart-home/control-lamp-state',
+      { message: message, model: model },
+    );
   }
 }

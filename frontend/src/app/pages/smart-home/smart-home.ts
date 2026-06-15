@@ -1,23 +1,20 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {FormsModule} from '@angular/forms';
-import {ChatService} from '../../chat-service';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { LanguageModelService } from '../../language-model.service';
 
 @Component({
   selector: 'app-smart-home',
-  imports: [
-    FormsModule
-  ],
+  imports: [FormsModule],
   templateUrl: './smart-home.html',
   styleUrl: './smart-home.css',
   standalone: true,
 })
-export class SmartHome  implements OnInit {
-
+export class SmartHome implements OnInit {
   LAPM_COUNT = 12;
-  private chatService = inject(ChatService);
+  private chatService = inject(LanguageModelService);
   ngOnInit(): void {
-    this.chatService.getModels().subscribe(list => {
+    this.chatService.getModels().subscribe((list) => {
       this.models.set(list);
       this.selectedModel.set(list[0] ?? '');
     });
@@ -41,21 +38,24 @@ export class SmartHome  implements OnInit {
     this.loading.set(true);
     this.error.set('');
 
-    this.http.post<{ states: number[]; error?: string }>('http://localhost:8000/smart-home/lamps', { message: msg,model: this.selectedModel() })
-      .subscribe({
-        next: (res) => {
-          this.lamps.set(res.states);
-          if (res.error) this.error.set(res.error);
-          this.input.set('');this.loading.set(false);
-        },
-        error: () => {
-          this.error.set('Failed to connect to backend.');
-          this.loading.set(false);
-        }
-      });
+    this.chatService.changeLampState(msg, this.selectedModel()).subscribe({
+      next: (res) => {
+        this.lamps.set(res.states);
+        if (res.error) this.error.set(res.error);
+        this.input.set('');
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Failed to connect to backend.');
+        this.loading.set(false);
+      },
+    });
   }
 
   onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      this.send();
+    }
   }
 }

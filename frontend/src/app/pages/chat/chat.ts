@@ -1,5 +1,5 @@
 import {AfterViewChecked, Component, ElementRef, signal, ViewChild} from '@angular/core';
-import {ChatService} from '../../chat-service';
+import {LanguageModelService} from '../../language-model.service';
 import {Message} from '../../message';
 
 @Component({
@@ -17,7 +17,7 @@ export class Chat implements AfterViewChecked{
   models = signal<string[]>([]);
   selectedModel = signal('');
 
-  constructor(private chat: ChatService) {
+  constructor(private chat: LanguageModelService) {
     this.chat.getModels().subscribe(list => {
       this.models.set(list);
       this.selectedModel.set(list[0] ?? '');

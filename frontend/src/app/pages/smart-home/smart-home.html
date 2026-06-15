@@ -6,24 +6,24 @@
 
   <!-- Lamp grid -->
   <div class="grid grid-cols-3 gap-4 mb-12">
-    @for (n of lampNumbers; track n) {
+    @for (item of lampNumbers; track item) {
       <div class="relative w-24 h-24 bg-[#1a1a1a] rounded-xl flex items-center justify-center border transition-all duration-500"
-           [class]="lamps()[n-1] === 1
+           [class]="lamps()[item-1] === 1
              ? 'border-yellow-400 shadow-[0_0_20px_4px_rgba(250,204,21,0.4)]'
              : 'border-white/10'">
 
         <!-- Lamp icon -->
         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="1.5"
-             [attr.stroke]="lamps()[n-1] === 1 ? '#facc15' : '#444'"
-             [style.filter]="lamps()[n-1] === 1 ? 'drop-shadow(0 0 6px #facc15)' : 'none'">
+             [attr.stroke]="lamps()[item-1] === 1 ? '#facc15' : '#444'"
+             [style.filter]="lamps()[item-1] === 1 ? 'drop-shadow(0 0 6px #facc15)' : 'none'">
           <path d="M9 21h6M12 3a6 6 0 0 1 4 10.47V17H8v-3.53A6 6 0 0 1 12 3z"/>
         </svg>
 
         <!-- Number badge -->
         <span class="absolute top-1.5 right-2 text-xs font-mono"
-              [class]="lamps()[n-1] === 1 ? 'text-yellow-400' : 'text-white/30'">
-          {{ n }}
+              [class]="lamps()[item-1] === 1 ? 'text-yellow-400' : 'text-white/30'">
+          {{ item }}
         </span>
       </div>
     }

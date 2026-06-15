@@ -1,103 +1,82 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 import ollama
 import json
 
-app = FastAPI()
+from smart_home import lamp_system_prompt, LAMP_TOOL, extract_states, all_off
+from schemas import LampStateRequest, ChatRequest
+
+from config import settings
+app = FastAPI(
+    title="AI Chatbot Agent",
+    version="0.1.0",
+    description="FastAPI backend with configurable Ollama"
+)
+
+# ========================= MIDDLEWARE =========================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=settings.allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class Message(BaseModel):
-    role: str
-    content: str
+# ========================= OLLAMA CLIENT =========================
 
-class ChatRequest(BaseModel):
-    messages: list[Message]
-    model: str = "llama3.1:8b"
+ollama_client = ollama.Client(host=settings.ollama_host)
 
+
+# ========================= HELPERS =========================
+def format_stream_chunk(content: str) -> str:
+    return f"data: {json.dumps({'content': content})}\n\n"
+
+
+# ========================= ENDPOINTS =========================
 @app.post("/chat")
 async def chat(request: ChatRequest):
     messages = [{"role": m.role, "content": m.content} for m in request.messages]
 
     def stream():
-        for chunk in ollama.chat(
-            model=request.model,
-            messages=messages,
-            stream=True
-        ):
-            content = chunk["message"]["content"]
-            yield f"data: {json.dumps({'content': content})}\n\n"
-        yield "data: [DONE]\n\n"
+        try:
+            for chunk in ollama_client.chat(
+                model=request.model,
+                messages=messages,
+                stream=True,
+            ):
+                yield format_stream_chunk(chunk["message"]["content"])
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
 
 
 @app.get("/models")
 async def list_models():
-    result = ollama.list()
-    names = [m.model for m in result.models]
-    return {"models": names}
+    try:
+        result = ollama_client.list()
+        return {"models": [m.model for m in result.models]}
+    except Exception as e:
+        return {"models": [], "error": str(e)}
 
 
-LAMP_COUNT = 12
-
-lamp_tool = {
-    "type": "function",
-    "function": {
-        "name": "set_lamps",
-        "description": "Set the on/off state for each lamp",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "states": {
-                    "type": "array",
-                    "items": {"type": "integer", "enum": [0, 1]},
-                    "description": f"Array of {LAMP_COUNT} values (0=off, 1=on), indexed from lamp 1 to {LAMP_COUNT}"
-                }
-            },
-            "required": ["states"]
-        }
-    }
-}
-
-class LampRequest(BaseModel):
-    message: str
-    model: str = "llama3.1:8b"  # add this field
-
-@app.post("/smart-home/lamps")
-async def control_lamps(req: LampRequest):
-
-    response = ollama.chat(
-        model=req.model,
-        messages=[
-            {
-                "role": "system",
-                "content": f"You control {LAMP_COUNT} lamps numbered 1 to {LAMP_COUNT}. Always call set_lamps tool."
-            },
-            {"role": "user", "content": req.message}
-        ],
-        tools=[lamp_tool]
-    )
-
-    msg = response["message"]
-
-    if msg.get("tool_calls"):
-        args = msg["tool_calls"][0]["function"]["arguments"]
-        states = args if isinstance(args, dict) else json.loads(args)
-        return {"states": states["states"]}
-
-    # fallback: model didn't call the tool
-    return {"states": [0] * LAMP_COUNT, "error": "Model did not call tool"}
-
-
+@app.post("/smart-home/control-lamp-state")
+async def control_lamps(req: LampStateRequest):
+    try:
+        response = ollama_client.chat(
+            model=req.model,
+            messages=[
+                {"role": "system", "content": lamp_system_prompt()},
+                {"role": "user", "content": req.message},
+            ],
+            tools=[LAMP_TOOL],
+        )
+        states = extract_states(response["message"])
+        if states is None:
+            return {"states": all_off(), "error": "Model did not call the tool"}
+        return {"states": states}
+    except Exception as e:
+        return {"states": all_off(), "error": f"Failed to control lamps: {e}"}
