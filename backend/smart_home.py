@@ -25,7 +25,6 @@ def build_lamp_tool() -> dict:
     }
 
 
-LAMP_TOOL = build_lamp_tool()
 
 
 def lamp_system_prompt() -> str:

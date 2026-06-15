@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 import ollama
 import json
 
-from smart_home import lamp_system_prompt, LAMP_TOOL, extract_states, all_off
+from smart_home import lamp_system_prompt, extract_states, all_off, build_lamp_tool
 from schemas import LampStateRequest, ChatRequest
 
 from config import settings
@@ -72,7 +72,7 @@ async def control_lamps(req: LampStateRequest):
                 {"role": "system", "content": lamp_system_prompt()},
                 {"role": "user", "content": req.message},
             ],
-            tools=[LAMP_TOOL],
+            tools=[build_lamp_tool()],
         )
         states = extract_states(response["message"])
         if states is None:
