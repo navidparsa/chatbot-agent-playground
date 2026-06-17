@@ -1,10 +1,12 @@
+from unittest import FunctionTestCase
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import ollama
 import json
 
-from smart_home import lamp_system_prompt, extract_states, all_off, build_lamp_tool
+from smart_home import lamp_system_prompt, extract_tool_call, all_off, build_lamp_tool, FUNCTIONS_DICTIONARY
 from schemas import LampStateRequest, ChatRequest
 
 from config import settings
@@ -74,7 +76,9 @@ async def control_lamps(req: LampStateRequest):
             ],
             tools=[build_lamp_tool()],
         )
-        states = extract_states(response["message"])
+        func_name, args = extract_tool_call(response["message"])
+        func = FUNCTIONS_DICTIONARY.get(func_name)
+        states = func(**args)
         if states is None:
             return {"states": all_off(), "error": "Model did not call the tool"}
         return {"states": states}

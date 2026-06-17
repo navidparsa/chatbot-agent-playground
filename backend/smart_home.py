@@ -24,9 +24,6 @@ def build_lamp_tool() -> dict:
         },
     }
 
-
-
-
 def lamp_system_prompt() -> str:
     return (
         f"You control {settings.lamp_count} lamps numbered 1 to {settings.lamp_count}. "
@@ -38,11 +35,25 @@ def all_off() -> list[int]:
     return [0] * settings.lamp_count
 
 
-def extract_states(msg: dict) -> list[int] | None:
-    tool_calls = msg.get("tool_calls")
+def set_lamps(states: list[int]) -> list[int]:
+    print(dict(enumerate(states)))
+    return states
+
+
+FUNCTIONS_DICTIONARY = {
+    "set_lamps": set_lamps,
+}
+
+def extract_tool_call(message: dict):
+    tool_calls = message.get("tool_calls")
     if not tool_calls:
         return None
-    args = tool_calls[0]["function"]["arguments"]
-    if isinstance(args, str):
-        args = json.loads(args)
-    return args.get("states")
+    function = tool_calls[0]["function"]
+    if not function:
+        return None
+    func_name = function["name"]
+    arguments = function["arguments"]
+    if isinstance(arguments, str):
+        arguments = json.loads(arguments)
+    return func_name, arguments
+
