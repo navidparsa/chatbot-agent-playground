@@ -1,15 +1,14 @@
-from unittest import FunctionTestCase
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-import ollama
 import json
 
-from smart_home import lamp_system_prompt, extract_tool_call, all_off, build_lamp_tool, FUNCTIONS_DICTIONARY
-from schemas import LampStateRequest, ChatRequest
+import ollama
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+from schemas import LampStateRequest
+from smart_home import lamp_system_prompt, extract_tool_call, all_off, build_lamp_tool, FUNCTIONS_DICTIONARY
+
 app = FastAPI(
     title="AI Chatbot Agent",
     version="0.1.0",
@@ -37,24 +36,6 @@ def format_stream_chunk(content: str) -> str:
 
 
 # ========================= ENDPOINTS =========================
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    messages = [{"role": m.role, "content": m.content} for m in request.messages]
-
-    def stream():
-        try:
-            for chunk in ollama_client.chat(
-                model=request.model,
-                messages=messages,
-                stream=True,
-            ):
-                yield format_stream_chunk(chunk["message"]["content"])
-            yield "data: [DONE]\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-
-    return StreamingResponse(stream(), media_type="text/event-stream")
-
 
 @app.get("/models")
 async def list_models():

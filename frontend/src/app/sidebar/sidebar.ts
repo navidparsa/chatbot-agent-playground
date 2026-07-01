@@ -9,7 +9,6 @@ import {RouterLink, RouterLinkActive} from '@angular/router';
 })
 export class Sidebar {
   navItems = [
-    { icon: '💬', label: 'Chat', route: '/' },
     { icon: '💡', label: 'Smart-Home', route: '/smart-home' },
   ];
 }
